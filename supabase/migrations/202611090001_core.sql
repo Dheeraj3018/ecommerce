@@ -86,3 +86,9 @@ for each row execute function public.create_profile_for_new_user();
 -- variant reads admin-only until that is implemented.
 drop policy "Read active variants" on public.product_variants;
 create policy "Admin reads variants" on public.product_variants for select to authenticated using (public.is_admin());
+
+-- Backfill customer profiles for users registered before this migration.
+insert into public.profiles (id, role)
+select id, 'customer'
+from auth.users
+on conflict (id) do nothing;
