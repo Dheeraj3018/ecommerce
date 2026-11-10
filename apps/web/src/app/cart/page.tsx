@@ -2,21 +2,35 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useState } from "react";
-import { money, readCart, writeCart, type CartItem } from "@/lib/cart";
+import { useMemo, useSyncExternalStore } from "react";
+import { CART_KEY, money, writeCart, type CartItem } from "@/lib/cart";
 
 export default function CartPage() {
-  const [items, setItems] = useState<CartItem[]>([]);
-  useEffect(() => {
-    function reload() { setItems(readCart()); }
-    reload();
-    window.addEventListener("cart-changed", reload);
-    window.addEventListener("storage", reload);
-    return () => { window.removeEventListener("cart-changed", reload); window.removeEventListener("storage", reload); };
-  }, []);
+  const savedCart = useSyncExternalStore(
+    (notify) => {
+      window.addEventListener("cart-changed", notify);
+      window.addEventListener("storage", notify);
+      return () => { window.removeEventListener("cart-changed", notify); window.removeEventListener("storage", notify); };
+    },
+    () => localStorage.getItem(CART_KEY) ?? "[]",
+    () => "[]",
+  );
+  const items = useMemo<CartItem[]>(() => {
+    try {
+      const value: unknown = JSON.parse(savedCart);
+      if (!Array.isArray(value)) return [];
+      return value.filter((item): item is CartItem =>
+        item !== null && typeof item === "object" &&
+        typeof (item as CartItem).variantId === "string" &&
+        typeof (item as CartItem).name === "string" &&
+        typeof (item as CartItem).quantity === "number" &&
+        Number.isSafeInteger((item as CartItem).unitPricePaise) &&
+        (item as CartItem).unitPricePaise >= 0
+      ).slice(0, 100);
+    } catch { return []; }
+  }, [savedCart]);
   function update(id: string, quantity: number) {
     const next = quantity <= 0 ? items.filter(i => i.variantId !== id) : items.map(i => i.variantId === id ? { ...i, quantity: Math.min(99, quantity) } : i);
-    setItems(next);
     writeCart(next);
   }
   const total = items.reduce((sum, item) => sum + item.unitPricePaise * item.quantity, 0);
