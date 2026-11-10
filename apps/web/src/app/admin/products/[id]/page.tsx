@@ -60,7 +60,7 @@ export default async function EditProduct({ params }: { params: Promise<{ id: st
         <button className="rounded-lg bg-emerald-800 px-5 py-3 text-white">Add variant</button>
       </form>
     </section>
-    {error && <p role="alert" className="mt-6 text-red-700">Couldn't load variants.</p>}
+    {error && <p role="alert" className="mt-6 text-red-700">Could not load variants.</p>}
     <section className="mt-8 space-y-5">
       <h2 className="text-xl font-semibold">Existing variants</h2>
       {variants?.map(v=><article key={v.id} className="rounded-2xl border p-6">
