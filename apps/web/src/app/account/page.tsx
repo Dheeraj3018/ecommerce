@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/app/auth/actions";
 
+export const instant = false;
+
 export default async function Account() {
   const supabase = await createClient();
   const { data: { user }, error } = await supabase.auth.getUser();
