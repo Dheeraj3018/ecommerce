@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { signIn } from "@/app/auth/actions";
 
+export const instant = false;
+
 export default async function Login({ searchParams }: { searchParams: Promise<{ error?: string; registered?: string }> }) {
   const params = await searchParams;
   return <main className="mx-auto w-full max-w-md px-6 py-20">
