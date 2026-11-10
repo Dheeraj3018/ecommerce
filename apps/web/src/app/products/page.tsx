@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 
+export const instant = false;
+
 type Product = { id: string; name: string; slug: string; description: string | null };
 type Variant = { id: string; product_id: string; sku: string; retail_price_paise: number; wholesale_price_paise: number | null; wholesale_min_qty: number | null; in_stock: boolean; attributes: Record<string, string> };
 
