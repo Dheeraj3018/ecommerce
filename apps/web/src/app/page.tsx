@@ -19,6 +19,7 @@ export default function Home() {
           <Link href="/login" className="hover:text-emerald-700">Sign in</Link>
           <Link href="/account" className="hover:text-emerald-700">Account</Link>
           <Link href="/cart" className="hover:text-emerald-700">Cart</Link>
+          <Link href="/wholesale" className="hover:text-emerald-700">Wholesale</Link>
           <Link href="/admin" className="hover:text-emerald-700">Admin</Link>
         </nav>
       </div>
