@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { StoreHeader, StoreFooter } from "@/components/store-shell";
 import { AddToCart } from "@/components/add-to-cart";
 import { money } from "@/lib/cart";
 
@@ -16,28 +17,46 @@ type CatalogVariant = {
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const db = await createClient();
-  const { data: product, error } = await db.from("products").select("id,name,slug,description,image_path,active").eq("slug", slug).eq("active", true).maybeSingle();
+  const { data: product, error } = await db.from("products")
+    .select("id,name,slug,description,image_path,active")
+    .eq("slug", slug).eq("active", true).maybeSingle();
   if (error || !product) notFound();
   const { data } = await db.rpc("catalog_variants");
   const variants = ((data ?? []) as CatalogVariant[]).filter(v => v.product_id === product.id);
   const imageUrl = product.image_path ? db.storage.from("product-images").getPublicUrl(product.image_path).data.publicUrl : null;
-  return <main className="mx-auto max-w-6xl px-6 py-12">
-    <nav className="text-sm text-emerald-800"><Link href="/">Home</Link><span className="mx-2">/</span><Link href="/products">Products</Link><span className="mx-2">/</span>{product.name}</nav>
-    <div className="mt-8 grid gap-10 md:grid-cols-2">
-      <div className="relative flex aspect-square items-center justify-center overflow-hidden rounded-3xl bg-emerald-50">{imageUrl ? <Image src={imageUrl} alt={product.name} width={800} height={800} unoptimized className="h-full w-full object-contain"/> : <div className="text-center"><div className="text-8xl" aria-hidden="true">📦</div><p className="mt-3 text-sm text-emerald-800">Photo coming soon</p></div>}</div>
-      <div><span className="text-xs font-bold uppercase tracking-widest text-orange-700">Product details</span><h1 className="mt-3 text-4xl font-bold tracking-tight">{product.name}</h1><p className="mt-5 leading-relaxed text-slate-600">{product.description || "Product details will be available soon."}</p>
-      <h2 className="mt-9 text-xl font-semibold">Available options</h2>
-      <div className="mt-4 space-y-4">{variants.map(variant => {
-        const label = Object.values(variant.attributes ?? {}).join(" · ") || variant.sku;
-        return <div key={variant.id} className="flex flex-wrap items-center justify-between gap-4 rounded-xl border p-4">
-          <div><p className="font-semibold">{label}</p><p className="mt-1 font-bold text-emerald-900">{money(variant.retail_price_paise)}</p>{variant.wholesale_price_paise !== null && <p className="mt-1 text-xs text-slate-600">Wholesale: {money(variant.wholesale_price_paise)} · Min. {variant.wholesale_min_qty} units</p>}<p className={variant.in_stock ? "mt-1 text-xs text-green-700" : "mt-1 text-xs text-red-700"}>{variant.in_stock ? "In stock" : "Out of stock"}</p></div>
-          <AddToCart available={variant.in_stock} item={{ variantId: variant.id, productId: product.id, slug: product.slug, name: product.name, label, unitPricePaise: variant.retail_price_paise, imageUrl }}/>
-        </div>;
-      })}</div>
-      {variants.length === 0 && <p className="mt-4 rounded-xl bg-zinc-50 p-5 text-slate-600">This product does not have any purchasable variants yet.</p>}
-      <div className="mt-8 flex items-center gap-4"><Link href="/cart" className="rounded-xl border border-emerald-800 px-5 py-3 font-semibold text-emerald-800 hover:bg-emerald-50">View cart →</Link><Link href="/products" className="text-sm hover:underline">Back to catalog</Link></div>
-      <p className="mt-8 text-xs text-slate-500">Preview checkout is disabled. Availability and pricing will be verified on the server before payments are enabled.</p>
+  return <div className="store-site">
+    <StoreHeader/>
+    <main className="detail-page">
+      <nav className="detail-breadcrumb" aria-label="Breadcrumb"><Link href="/">Home</Link><span>/</span><Link href="/products">The collection</Link><span>/</span><span aria-current="page">{product.name}</span></nav>
+      <div className="detail-grid">
+        <div className="detail-media">
+          <span className="detail-image-label">THE EVERYDAY EDIT / SELECTED FOR YOU</span>
+          {imageUrl ? <Image src={imageUrl} alt={product.name} width={860} height={860} unoptimized className="detail-photo"/> : <div className="detail-placeholder" aria-label="Product photography coming soon"><div className="detail-placeholder-circle"/><div className="detail-placeholder-vessel"><span>THE<br/>EVERYDAY<br/>EDIT</span></div></div>}
+          <span className="detail-image-index">01 / PRODUCT VIEW</span>
+        </div>
+        <div className="detail-info">
+          <span className="detail-kicker">FROM THE COLLECTION <span>—</span> AVAILABLE PRODUCTS</span>
+          <h1>{product.name}<span>.</span></h1>
+          <p className="detail-description">{product.description || "Thoughtfully selected for all the little moments that make up your day."}</p>
+          <div className="detail-rule"/>
+          <div className="detail-option-heading"><h2>Choose your option</h2><span>{String(variants.length).padStart(2,"0")} AVAILABLE SIZES</span></div>
+          <div className="detail-options">{variants.map(variant => {
+            const label = Object.values(variant.attributes ?? {}).join(" · ") || variant.sku;
+            return <div key={variant.id} className="detail-option">
+              <div className="detail-option-name"><h3>{label}</h3><span>{variant.in_stock ? "IN STOCK" : "OUT OF STOCK"}</span></div>
+              <div className="detail-option-buy">
+                <div><strong>{money(variant.retail_price_paise)}</strong>{variant.wholesale_price_paise !== null && <p>Wholesale: {money(variant.wholesale_price_paise)} · Min. {variant.wholesale_min_qty}</p>}</div>
+                <AddToCart available={variant.in_stock} item={{ variantId: variant.id, productId: product.id, slug: product.slug, name: product.name, label, unitPricePaise: variant.retail_price_paise, imageUrl }}/>
+              </div>
+            </div>;
+          })}</div>
+          {variants.length === 0 && <p className="detail-empty">Options and pricing are being prepared. Check back soon.</p>}
+          <Link href="/cart" className="detail-view-cart">View your cart <span aria-hidden="true">↗</span></Link>
+          <p className="detail-disclaimer">Checkout is not yet enabled. Pricing and inventory will be verified at order placement.</p>
+        </div>
       </div>
-    </div>
-  </main>;
+      <div className="detail-bottom"><span>GOOD THINGS. BETTER EVERY DAYS.</span><Link href="/products">← Back to the full collection</Link></div>
+    </main>
+    <StoreFooter/>
+  </div>;
 }
