@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { saveProduct, saveVariant, deleteVariant } from "../../actions";
+import { ProductImageUpload } from "@/components/product-image-upload";
 
 export const instant = false;
 
@@ -18,7 +19,7 @@ export default async function EditProduct({ params }: { params: Promise<{ id: st
   const { data: profile } = await db.from("profiles").select("role").eq("id", user.id).single();
   if (profile?.role !== "admin") redirect("/account");
   const [{ data: product }, { data: categories }, { data: variants, error }] = await Promise.all([
-    db.from("products").select("id,name,slug,description,category_id,active").eq("id", id).single(),
+    db.from("products").select("id,name,slug,description,category_id,active,image_path").eq("id", id).single(),
     db.from("categories").select("id,name").order("name"),
     db.from("product_variants").select("id,product_id,sku,attributes,retail_price_paise,wholesale_price_paise,wholesale_min_qty,stock_qty,low_stock_threshold,active").eq("product_id", id).order("sku"),
   ]);
@@ -38,6 +39,10 @@ export default async function EditProduct({ params }: { params: Promise<{ id: st
         <label className="flex items-center gap-2 text-sm"><input name="active" type="checkbox" defaultChecked={product.active}/>Published</label>
         <button className="rounded-lg bg-emerald-800 px-5 py-3 text-white">Save product</button>
       </form>
+    </section>
+    <section className="mt-8 rounded-2xl border p-6">
+      <h2 className="text-xl font-semibold">Product photo</h2>
+      <ProductImageUpload productId={product.id} currentUrl={product.image_path ? db.storage.from("product-images").getPublicUrl(product.image_path).data.publicUrl : null}/>
     </section>
     <section className="mt-8 rounded-2xl border p-6">
       <h2 className="text-xl font-semibold">Add a size or variant</h2>
