@@ -27,6 +27,7 @@ export default async function AdminPage() {
     <div className="mt-10 grid gap-5 sm:grid-cols-2">
       <Link href="/admin/categories" className="rounded-2xl border p-7 transition hover:border-emerald-600 hover:shadow-lg"><h2 className="text-xl font-bold">Manage categories →</h2><p className="mt-2 text-sm text-zinc-600">Create, edit, publish and remove store categories.</p></Link>
       <Link href="/admin/products" className="rounded-2xl border p-7 transition hover:border-emerald-600 hover:shadow-lg"><h2 className="text-xl font-bold">Manage products →</h2><p className="mt-2 text-sm text-zinc-600">Manage products, sizes, SKUs, prices, wholesale minimums and stock levels.</p></Link>
+      <Link href="/admin/orders" className="rounded-2xl border p-7 transition hover:border-emerald-600 hover:shadow-lg"><h2 className="text-xl font-bold">Orders & tracking →</h2><p className="mt-2 text-sm text-zinc-600">View order details, payments, delivery addresses and tracking events.</p></Link>
       <Link href="/admin/wholesale" className="rounded-2xl border p-7 transition hover:border-emerald-600 hover:shadow-lg"><h2 className="text-xl font-bold">Wholesale applications →</h2><p className="mt-2 text-sm text-zinc-600">Review and approve or reject wholesale buyers.</p></Link>
     </div>
   </main>;
