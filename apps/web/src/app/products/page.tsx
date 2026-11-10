@@ -1,43 +1,43 @@
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
+import { money } from "@/lib/cart";
 
 export const instant = false;
 
-type Product = { id: string; name: string; slug: string; description: string | null };
-type Variant = { id: string; product_id: string; sku: string; retail_price_paise: number; wholesale_price_paise: number | null; wholesale_min_qty: number | null; in_stock: boolean; attributes: Record<string, string> };
-
-function rupees(paise: number) {
-  return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(paise / 100);
-}
+type Product = { id: string; name: string; slug: string; description: string | null; image_path: string | null };
+type Variant = { id: string; product_id: string; retail_price_paise: number; in_stock: boolean };
 
 export default async function ProductsPage() {
-  const supabase = await createClient();
+  const db = await createClient();
   const [{ data: products, error: productsError }, { data: variants, error: variantsError }] = await Promise.all([
-    supabase.from("products").select("id,name,slug,description").eq("active", true).order("name"),
-    supabase.rpc("catalog_variants"),
+    db.from("products").select("id,name,slug,description,image_path").eq("active", true).order("name"),
+    db.rpc("catalog_variants"),
   ]);
-  if (productsError || variantsError) {
-    return <main className="mx-auto max-w-6xl px-6 py-16"><h1 className="text-3xl font-bold">Products</h1><p className="mt-4">Our catalog is temporarily unavailable.</p></main>;
-  }
-  const allVariants = (variants ?? []) as Variant[];
-  return <main className="mx-auto w-full max-w-6xl px-6 py-16">
-    <div className="flex items-center justify-between gap-4"><h1 className="text-3xl font-bold">Shop products</h1><Link href="/account" className="underline">My account</Link></div>
-    <p className="mt-3 text-zinc-600">Browse our catalog. Checkout will be available after payments and shipping are configured.</p>
+  const list = (products ?? []) as Product[];
+  const options = (variants ?? []) as Variant[];
+  return <main className="mx-auto w-full max-w-7xl px-6 py-12">
+    <nav className="mb-6 flex flex-wrap items-center justify-between gap-4 text-sm font-semibold text-emerald-900">
+      <Link href="/" className="hover:underline">← Home</Link>
+      <div className="flex gap-5"><Link href="/cart" className="hover:underline">Your cart →</Link><Link href="/account" className="hover:underline">Account</Link></div>
+    </nav>
+    <div className="rounded-3xl bg-emerald-950 px-7 py-12 text-white"><p className="text-xs font-bold uppercase tracking-widest text-amber-300">Discover our products</p><h1 className="mt-3 text-4xl font-extrabold">Shop our collection</h1><p className="mt-4 max-w-xl text-emerald-100">Explore our available products. Add your favourites to a preview cart. Checkout is coming soon.</p></div>
+    {(productsError || variantsError) && <p role="alert" className="mt-8 text-red-700">Our catalog is temporarily unavailable. Please try again later.</p>}
     <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      {((products ?? []) as Product[]).map((product) => {
-        const choices = allVariants.filter((variant) => variant.product_id === product.id);
-        return <article key={product.id} className="rounded-2xl border border-zinc-200 p-6">
-          <h2 className="text-xl font-semibold">{product.name}</h2>
-          {product.description && <p className="mt-2 text-sm text-zinc-600">{product.description}</p>}
-          <div className="mt-5 space-y-3">{choices.map((v) => <div key={v.id} className="border-t pt-3 text-sm">
-            <div className="font-medium">{Object.values(v.attributes ?? {}).join(" · ") || v.sku}</div>
-            <div className="mt-1">{rupees(v.retail_price_paise)} <span className="text-zinc-500">retail</span></div>
-            {v.wholesale_price_paise !== null && <div>{rupees(v.wholesale_price_paise)} wholesale · min {v.wholesale_min_qty}</div>}
-            <p className={v.in_stock ? "text-green-700" : "text-red-700"}>{v.in_stock ? "In stock" : "Out of stock"}</p>
-          </div>)}</div>
+      {list.map(product => {
+        const choices = options.filter(v => v.product_id === product.id);
+        const lowestPrice = choices.length ? Math.min(...choices.map(v => v.retail_price_paise)) : null;
+        const photo = product.image_path ? db.storage.from("product-images").getPublicUrl(product.image_path).data.publicUrl : null;
+        return <article key={product.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md">
+          <Link href={`/products/${product.slug}`} className="block">
+            <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden bg-emerald-50">{photo ? <Image src={photo} alt={product.name} width={640} height={480} unoptimized className="h-full w-full object-cover"/> : <span className="text-7xl" aria-hidden="true">📦</span>}</div>
+            <div className="p-6"><h2 className="text-xl font-bold text-slate-900">{product.name}</h2>{product.description && <p className="mt-2 line-clamp-2 text-sm text-slate-600">{product.description}</p>}
+              <div className="mt-5 flex items-center justify-between gap-3"><div>{lowestPrice === null ? <span className="text-sm text-slate-500">Price coming soon</span> : <p><span className="text-xs text-slate-500">From </span><span className="font-bold text-emerald-900">{money(lowestPrice)}</span></p>}</div><span className="text-sm font-bold text-emerald-800">View options →</span></div>
+            </div>
+          </Link>
         </article>;
       })}
     </div>
-    {!products?.length && <p className="mt-8 text-zinc-600">Products will appear here when published by an administrator.</p>}
+    {!productsError && list.length === 0 && <div className="mt-12 rounded-2xl border p-12 text-center"><div className="text-5xl">📦</div><h2 className="mt-4 text-xl font-bold">New arrivals coming soon</h2><p className="mt-2 text-slate-600">Products will appear once published by the store administrator.</p></div>}
   </main>;
 }
