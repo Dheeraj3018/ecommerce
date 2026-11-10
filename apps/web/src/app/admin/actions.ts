@@ -125,3 +125,17 @@ export async function deleteVariant(form: FormData) {
   if (error) throw new Error("Unable to delete variant: " + error.message);
   refresh();
 }
+
+export async function attachProductImage(productId: string, path: string) {
+  const db = await requireAdmin();
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(productId)) {
+    throw new Error("Invalid product identifier.");
+  }
+  if (!new RegExp("^" + productId + "/[0-9a-f-]{36}[.](jpg|png|webp)$", "i").test(path)) {
+    throw new Error("Invalid image path.");
+  }
+  const { data, error } = await db.from("products").update({ image_path: path }).eq("id", productId).select("id").single();
+  if (error || !data) throw new Error("Unable to save product image.");
+  refresh();
+  revalidatePath("/products/" + productId);
+}
