@@ -47,7 +47,7 @@ export default function CartPage() {
           </div>
         </article>)}
       </div>
-      <aside className="h-fit rounded-2xl border p-6"><h2 className="text-lg font-bold">Order summary</h2><div className="mt-5 flex justify-between"><span>Estimated subtotal</span><strong>{money(total)}</strong></div><p className="mt-2 text-xs text-slate-500">Shipping and taxes will be calculated later. Prices shown are saved snapshots, not guaranteed quotations.</p><button disabled className="mt-6 w-full cursor-not-allowed rounded-xl bg-zinc-200 px-5 py-3 font-semibold text-zinc-600">Checkout coming soon</button></aside>
+      <aside className="h-fit rounded-2xl border p-6"><h2 className="text-lg font-bold">Order summary</h2><div className="mt-5 flex justify-between"><span>Estimated subtotal</span><strong>{money(total)}</strong></div><p className="mt-2 text-xs text-slate-500">Shipping and taxes will be calculated later. Prices shown are saved snapshots, not guaranteed quotations.</p><Link href="/checkout" className="mt-6 block w-full rounded-xl bg-emerald-900 px-5 py-3 text-center font-semibold text-white hover:bg-emerald-800">Review checkout preview →</Link><p className="mt-3 text-xs text-zinc-500">No payments are collected yet.</p></aside>
       </div>}
   </main><StoreFooter/></div>;
 }
