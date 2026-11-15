@@ -39,7 +39,7 @@ export function ProductCollection({ products, categories }: { products: ProductL
       {filtered.map((product, index) => <Link key={product.id} href={`/products/${product.slug}`} className="catalog-product-card">
         <div className="catalog-product-image">
           <span className="catalog-product-index">{String(index + 1).padStart(2,"0")} / EDIT</span>
-          {product.imageUrl ? <Image src={product.imageUrl} alt={product.name} width={640} height={640} unoptimized className="catalog-product-photo"/> : <div className="catalog-product-placeholder" aria-hidden="true"><div className="catalog-placeholder-sun"/><div className="catalog-placeholder-jar"><div className="catalog-placeholder-label">GOOD<br/>THINGS.</div></div></div>}
+          {product.imageUrl ? <Image src={product.imageUrl} alt={product.name} width={640} height={640} sizes="(max-width: 420px) 100vw, (max-width: 1050px) 50vw, 33vw" className="catalog-product-photo"/> : <div className="catalog-product-placeholder" aria-hidden="true"><div className="catalog-placeholder-sun"/><div className="catalog-placeholder-jar"><div className="catalog-placeholder-label">GOOD<br/>THINGS.</div></div></div>}
           <span className="catalog-product-open" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M5 19 19 5M8 5h11v11"/></svg></span>
         </div>
         <div className="catalog-product-meta"><div><h2>{product.name}</h2><p>{product.description || "Thoughtfully selected for the everyday."}</p></div><div className="catalog-product-price">{product.fromPrice !== null ? money(product.fromPrice) : "Options coming soon"}<span>{product.available ? "View options →" : "Explore details →"}</span></div></div>
