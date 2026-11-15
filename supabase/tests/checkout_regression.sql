@@ -1,0 +1,40 @@
+begin;
+do $test$
+declare u uuid:=gen_random_uuid(); other_u uuid:=gen_random_uuid(); a uuid:=gen_random_uuid(); p uuid:=gen_random_uuid(); v uuid:=gen_random_uuid(); k uuid:=gen_random_uuid(); q jsonb; o jsonb; again jsonb; items jsonb;
+begin
+ insert into auth.users(id,email) values(u,u::text||'@example.invalid'),(other_u,other_u::text||'@example.invalid');
+ insert into public.customer_addresses(id,user_id,full_name,phone,line1,city,state,postal_code) values(a,u,'Test Buyer','9999999999','Test Street','Test City','Tamil Nadu','638673');
+ insert into public.products(id,name,slug,active) values(p,'Temporary checkout test',p::text,true);
+ insert into public.product_variants(id,product_id,sku,retail_price_paise,wholesale_price_paise,wholesale_min_qty,stock_qty,active) values(v,p,v::text,100000,50000,3,5,true);
+ perform set_config('request.jwt.claim.sub',u::text,true);
+ items:=jsonb_build_array(jsonb_build_object('variantId',v,'quantity',2));
+ q:=public.checkout_quote(items,a,'retail');
+ if (q->>'subtotalPaise')::bigint<>200000 then raise exception 'FAIL retail price'; end if;
+ begin perform public.checkout_quote(items,a,'wholesale'); raise exception 'FAIL approval'; exception when raise_exception then if sqlerrm<>'CHECKOUT_WHOLESALE' then raise; end if; end;
+ insert into public.wholesale_applications(user_id,business_name,status) values(u,'Temporary test','approved');
+ begin perform public.checkout_quote(items,a,'wholesale'); raise exception 'FAIL MOQ'; exception when raise_exception then if sqlerrm<>'CHECKOUT_MOQ' then raise; end if; end;
+ begin perform public.checkout_quote(items||items,a,'retail'); raise exception 'FAIL duplicate line'; exception when raise_exception then if sqlerrm<>'CHECKOUT_DUPLICATE_LINE' then raise; end if; end;
+ begin perform public.checkout_quote(jsonb_build_array(jsonb_build_object('variantId',v,'quantity',6)),a,'retail'); raise exception 'FAIL stock'; exception when raise_exception then if sqlerrm<>'CHECKOUT_STOCK' then raise; end if; end;
+ items:=jsonb_build_array(jsonb_build_object('variantId',v,'quantity',3));
+ q:=public.checkout_quote(items,a,'wholesale');
+ if (q->>'subtotalPaise')::bigint<>150000 then raise exception 'FAIL wholesale price'; end if;
+ begin perform public.checkout_create(items,a,'wholesale',k,'wrong'); raise exception 'FAIL stale quote'; exception when raise_exception then if sqlerrm<>'CHECKOUT_PRICE_CHANGED' then raise; end if; end;
+ -- Call the public wrapper with the actual API role, not the SQL editor owner.
+ execute 'set local role authenticated';
+ o:=public.checkout_create(items,a,'wholesale',k,q->>'quoteToken');
+ again:=public.checkout_create(items,a,'wholesale',k,q->>'quoteToken');
+ if o->>'orderId'<>again->>'orderId' or (again->>'replayed')::boolean is not true then raise exception 'FAIL replay'; end if;
+ if (select count(*) from public.orders where user_id=u)<>1 then raise exception 'FAIL duplicate order'; end if;
+ begin perform public.checkout_create(items,a,'wholesale',gen_random_uuid(),q->>'quoteToken'); raise exception 'FAIL second order'; exception when raise_exception then if sqlerrm<>'CHECKOUT_EXISTING' then raise; end if; end;
+ begin update public.orders set payment_status='paid' where id=(o->>'orderId')::uuid; raise exception 'FAIL unauthorized payment update'; exception when insufficient_privilege then null; end;
+ perform set_config('request.jwt.claim.sub',other_u::text,true);
+ if exists(select 1 from public.orders where id=(o->>'orderId')::uuid) then raise exception 'FAIL order privacy'; end if;
+ begin perform public.checkout_quote(items,a,'retail'); raise exception 'FAIL address privacy'; exception when raise_exception then if sqlerrm<>'CHECKOUT_ADDRESS' then raise; end if; end;
+ execute 'reset role';
+ if (select stock_qty from public.product_variants where id=v)<>5 then raise exception 'FAIL physical stock'; end if;
+ execute 'set local role anon';
+ begin perform public.checkout_quote(items,a,'retail'); raise exception 'FAIL anonymous access'; exception when insufficient_privilege then null; end;
+ execute 'reset role';
+end $test$;
+select 'PASS: authenticated checkout, anonymous denied, payment updates denied, cross-account access denied, prices, MOQ, idempotency' as result;
+rollback;
