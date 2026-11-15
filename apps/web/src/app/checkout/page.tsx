@@ -16,7 +16,7 @@ export default async function CheckoutPage() {
     <Link href="/cart" className="text-sm font-semibold text-emerald-800">← Back to cart</Link>
     <p className="mt-9 text-xs font-bold uppercase tracking-widest text-amber-700">Your next step</p>
     <h1 className="mt-3 text-5xl font-medium tracking-[-0.06em]">Checkout <span className="font-serif italic text-[#ad8154]">preview.</span></h1>
-    <p className="mt-4 max-w-xl text-sm leading-6 text-zinc-600">Select an Indian delivery address and calculate a fresh estimate directly from the store database. Checkout and online payments are not yet active.</p>
+    <p className="mt-4 max-w-xl text-sm leading-6 text-zinc-600">Select an Indian delivery address and calculate a fresh estimate directly from the store database. Create an unpaid reservation after confirming the estimate. Online payments and dispatch are not yet enabled.</p>
     {error ? <p role="alert" className="mt-7 rounded-xl bg-red-50 p-5 text-red-800">Your saved addresses are unavailable.</p> : <CheckoutPreview addresses={addresses??[]}/>}
   </main><StoreFooter/></div>;
 }
