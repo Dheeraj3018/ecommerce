@@ -19,7 +19,7 @@ export default async function OrderDetail({params}:{params:Promise<{id:string}>}
   const {data:{user},error:authError}=await db.auth.getUser();
   if (authError || !user) redirect("/login");
   const {data:order,error}=await db.from("orders")
-    .select("id,order_number,created_at,fulfillment_status,payment_status,subtotal_paise,shipping_paise,discount_paise,total_paise,address_snapshot,paid_at")
+    .select("id,order_number,created_at,fulfillment_status,payment_status,subtotal_paise,shipping_paise,discount_paise,total_paise,address_snapshot,paid_at,reservation_expires_at")
     .eq("id",id).eq("user_id",user.id).maybeSingle();
   if (error || !order) notFound();
   const [{data:items},{data:events}]=await Promise.all([
@@ -32,6 +32,7 @@ export default async function OrderDetail({params}:{params:Promise<{id:string}>}
     <p className="mt-9 text-xs font-bold uppercase tracking-widest text-amber-700">Your purchase</p>
     <h1 className="mt-3 text-4xl font-medium tracking-[-0.05em]">{formatOrderNumber(order.order_number)}</h1>
     <p className="mt-3 text-sm text-zinc-600">Placed {orderDate(order.created_at)} · {orderStatus(order.fulfillment_status)} · Payment {orderStatus(order.payment_status)}</p>
+    {order.reservation_expires_at && order.payment_status==="pending" && <p className="mt-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">{new Date(order.reservation_expires_at).getTime()<=Date.now() ? "Stock reservation expired. No payment was collected." : "Stock is reserved until " + new Date(order.reservation_expires_at).toLocaleString("en-IN",{timeZone:"Asia/Kolkata"}) + " IST. No payment has been collected."}</p>}
     <div className="mt-8 grid gap-7 lg:grid-cols-[minmax(0,1fr)_310px]">
       <div className="space-y-6">
         <section className="rounded-2xl border border-zinc-200 bg-white p-6"><h2 className="text-xl font-semibold">Order items</h2><div className="mt-4 divide-y divide-zinc-100">{items?.map(item=><div key={item.id} className="flex justify-between gap-4 py-4 text-sm"><div><p className="font-semibold">{item.product_name}</p><p className="mt-1 text-zinc-500">{item.variant_label} · SKU {item.sku} · Qty {item.quantity}</p>{item.pricing_tier==="wholesale" && <span className="mt-1 block text-emerald-800">Wholesale</span>}</div><strong>{money(item.line_total_paise)}</strong></div>)}</div></section>
