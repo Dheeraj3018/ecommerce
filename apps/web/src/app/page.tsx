@@ -1,11 +1,15 @@
 import Link from "next/link";
+import { seoPage } from "@/lib/seo";
+import { brand,description,absoluteUrl } from "@/lib/site";
+import { JsonLd } from "@/components/json-ld";
+export const metadata=seoPage("FMCG & Everyday Essentials in Coimbatore",description,"/");
 import { StoreHeader, StoreFooter, LinkArrow } from "@/components/store-shell";
 
 const collections = [
-  { number: "01", title: "Appalam & Vadagam", descriptor: "The familiar, reimagined.", tone: "rice", href: "/products", symbol: "grain" },
-  { number: "02", title: "Masalas & Spice Mixes", descriptor: "A little more flavour.", tone: "spice", href: "/products", symbol: "spice" },
-  { number: "03", title: "Thokku & Organic Foods", descriptor: "Slow-made goodness.", tone: "thokku", href: "/products", symbol: "leaf" },
-  { number: "04", title: "Home & Everyday", descriptor: "Essentials worth choosing.", tone: "home", href: "/products", symbol: "sun" },
+  { number: "01", title: "Appalam & Vadagam", descriptor: "The familiar, reimagined.", tone: "rice", href: "/categories", symbol: "grain" },
+  { number: "02", title: "Masalas & Spice Mixes", descriptor: "A little more flavour.", tone: "spice", href: "/categories", symbol: "spice" },
+  { number: "03", title: "Thokku & Organic Foods", descriptor: "Slow-made goodness.", tone: "thokku", href: "/categories", symbol: "leaf" },
+  { number: "04", title: "Home & Everyday", descriptor: "Essentials worth choosing.", tone: "home", href: "/categories", symbol: "sun" },
 ] as const;
 
 function ProductSculpture({ kind }: { kind: "grain" | "spice" | "leaf" | "sun" }) {
@@ -20,11 +24,12 @@ export default function Home() {
     <div className="store-announcement"><span className="announcement-dot"/> A new way to shop the everyday <span className="announcement-divider"/> Thoughtfully selected, all in one place</div>
     <StoreHeader/>
     <main>
+      <JsonLd value={{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":absoluteUrl("/#organization"),name:brand,url:absoluteUrl("/"),description},{"@type":"WebSite","@id":absoluteUrl("/#website"),name:brand,url:absoluteUrl("/"),publisher:{"@id":absoluteUrl("/#organization")}}]}}/>
       <section className="store-hero" aria-labelledby="hero-title">
         <div className="store-hero-copy">
           <div className="store-eyebrow hero-enter hero-enter-1"><span className="eyebrow-line"/> MADE FOR REAL LIFE <span className="eyebrow-index">01 / A MORE THOUGHTFUL STORE</span></div>
           <h1 id="hero-title" className="store-hero-title hero-enter hero-enter-2">A little more<br/><em>good</em> in every day<span className="store-title-dot">.</span></h1>
-          <p className="store-hero-desc hero-enter hero-enter-3">From everyday rituals to the things that make a house feel like home. Discover a considered collection of food, home and lifestyle essentials.</p>
+          <p className="store-hero-desc hero-enter hero-enter-3">From everyday rituals to the things that make a house feel like home. Discover FMCG products, traditional foods and household essentials from Coimbatore, Tamil Nadu.</p>
           <div className="store-hero-actions hero-enter hero-enter-4"><Link href="/products" className="store-cta-primary">Explore the collection <LinkArrow diagonal/></Link><Link href="/wholesale" className="store-cta-text">Shopping for business? <span aria-hidden="true">↗</span></Link></div>
           <div className="store-hero-bottom hero-enter hero-enter-5"><span><b>01 — 04</b> / CURATED CATEGORIES</span><span className="hero-scroll">SCROLL TO EXPLORE <span aria-hidden="true">↓</span></span></div>
         </div>
