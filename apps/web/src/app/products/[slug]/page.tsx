@@ -5,6 +5,10 @@ import { createClient } from "@/lib/supabase/server";
 import { StoreHeader, StoreFooter } from "@/components/store-shell";
 import { AddToCart } from "@/components/add-to-cart";
 import { money } from "@/lib/cart";
+import { getPublicProduct } from "@/lib/public-catalog";
+import { seoPage,cleanDescription,breadcrumbs } from "@/lib/seo";
+import { absoluteUrl,productPath,categoryPath,brand } from "@/lib/site";
+import { JsonLd } from "@/components/json-ld";
 
 export const instant = false;
 
@@ -14,24 +18,31 @@ type CatalogVariant = {
   wholesale_min_qty: number | null; in_stock: boolean;
 };
 
+export async function generateMetadata({params}:{params:Promise<{slug:string}>}){
+ const {slug}=await params;const result=await getPublicProduct(slug);if(!result)notFound();
+ return seoPage(result.product.name,cleanDescription(result.product.description,"Explore "+result.product.name+" including available sizes and retail prices."),productPath(slug),result.imageUrl,result.variants.length>0);
+}
+
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const db = await createClient();
-  const { data: product, error } = await db.from("products")
-    .select("id,name,slug,description,image_path,active")
-    .eq("slug", slug).eq("active", true).maybeSingle();
-  if (error || !product) notFound();
-  const { data } = await db.rpc("catalog_variants");
-  const variants = ((data ?? []) as CatalogVariant[]).filter(v => v.product_id === product.id);
-  const imageUrl = product.image_path ? db.storage.from("product-images").getPublicUrl(product.image_path).data.publicUrl : null;
+  const result=await getPublicProduct(slug);if(!result)notFound();
+  const {product,category,imageUrl}=result;
+  const db=await createClient();
+  const {data}=await db.rpc("catalog_variants").eq("product_id",product.id).order("id");
+  const variants=(data??result.variants.map(v=>({...v,wholesale_price_paise:null,wholesale_min_qty:null}))) as CatalogVariant[];
+  const crumbs=[{name:"Home",path:"/"},{name:"Products",path:"/products"},...(category?[{name:category.name,path:categoryPath(category.slug)}]:[]),{name:product.name,path:productPath(product.slug)}];
+  const offers=result.variants.map(v=>({"@type":"Offer",priceCurrency:"INR",price:(v.retail_price_paise/100).toFixed(2),availability:v.in_stock?"https://schema.org/InStock":"https://schema.org/OutOfStock",sku:v.sku,url:absoluteUrl(productPath(product.slug)),seller:{"@type":"Organization",name:brand}}));
+  const productSchema={"@context":"https://schema.org","@type":"Product",name:product.name,url:absoluteUrl(productPath(product.slug)),...(product.description?{description:product.description}:{}),...(imageUrl?{image:[imageUrl]}:{}),...(category?{category:category.name}:{}),offers};
   return <div className="store-site">
     <StoreHeader/>
     <main className="detail-page">
-      <nav className="detail-breadcrumb" aria-label="Breadcrumb"><Link href="/">Home</Link><span>/</span><Link href="/products">The collection</Link><span>/</span><span aria-current="page">{product.name}</span></nav>
+      <JsonLd value={breadcrumbs(crumbs)}/>
+      {offers.length>0 && <JsonLd value={productSchema}/>}
+      <nav className="detail-breadcrumb" aria-label="Breadcrumb"><Link href="/">Home</Link><span>/</span><Link href="/products">The collection</Link><span>/</span>{category&&<><Link href={categoryPath(category.slug)}>{category.name}</Link><span>/</span></>}<span aria-current="page">{product.name}</span></nav>
       <div className="detail-grid">
         <div className="detail-media">
           <span className="detail-image-label">THE EVERYDAY EDIT / SELECTED FOR YOU</span>
-          {imageUrl ? <Image src={imageUrl} alt={product.name} width={860} height={860} unoptimized className="detail-photo"/> : <div className="detail-placeholder" aria-label="Product photography coming soon"><div className="detail-placeholder-circle"/><div className="detail-placeholder-vessel"><span>THE<br/>EVERYDAY<br/>EDIT</span></div></div>}
+          {imageUrl ? <Image src={imageUrl} alt={product.name} width={860} height={860} sizes="(max-width: 760px) 100vw, 50vw" preload className="detail-photo"/> : <div className="detail-placeholder" aria-label="Product photography coming soon"><div className="detail-placeholder-circle"/><div className="detail-placeholder-vessel"><span>THE<br/>EVERYDAY<br/>EDIT</span></div></div>}
           <span className="detail-image-index">01 / PRODUCT VIEW</span>
         </div>
         <div className="detail-info">
@@ -52,7 +63,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           })}</div>
           {variants.length === 0 && <p className="detail-empty">Options and pricing are being prepared. Check back soon.</p>}
           <Link href="/cart" className="detail-view-cart">View your cart <span aria-hidden="true">↗</span></Link>
-          <p className="detail-disclaimer">Checkout is not yet enabled. Pricing and inventory will be verified at order placement.</p>
+          <p className="detail-disclaimer">Unpaid checkout reservations are available. Online payment and dispatch are not yet enabled.</p>
         </div>
       </div>
       <div className="detail-bottom"><span>GOOD THINGS. BETTER EVERY DAYS.</span><Link href="/products">← Back to the full collection</Link></div>
