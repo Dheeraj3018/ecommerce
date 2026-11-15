@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { brand } from "@/lib/site";
 
 function Arrow({ diagonal = false }: { diagonal?: boolean }) {
   return diagonal ? (
@@ -11,14 +12,14 @@ function Arrow({ diagonal = false }: { diagonal?: boolean }) {
 export function StoreHeader({ dark = false }: { dark?: boolean }) {
   return <header className={dark ? "store-header store-header-dark" : "store-header"}>
     <div className="store-header-inner">
-      <Link href="/" className="store-wordmark" aria-label="Your Store home">
+      <Link href="/" className="store-wordmark" aria-label={brand + " home"}>
         <span className="store-wordmark-icon" aria-hidden="true">
           <svg viewBox="0 0 40 40" fill="none"><path d="M20 3 37 20 20 37 3 20 20 3Z" stroke="currentColor" strokeWidth="1.5"/><path d="M12 20h16M20 12v16" stroke="currentColor" strokeWidth="1.5"/><circle cx="20" cy="20" r="3" fill="currentColor"/></svg>
         </span>
-        <span>yourstore<span className="store-wordmark-period">.</span></span>
+        <span>{brand}<span className="store-wordmark-period">.</span></span>
       </Link>
       <nav className="store-nav" aria-label="Main navigation">
-        <Link href="/products">The collection</Link>
+        <Link href="/products">The collection</Link><Link href="/categories">Categories</Link>
         <Link href="/wholesale">For businesses</Link>
         <Link href="/account">My account</Link>
       </nav>
@@ -31,7 +32,7 @@ export function StoreHeader({ dark = false }: { dark?: boolean }) {
         <details className="store-mobile-menu">
           <summary aria-label="Open menu"><span/><span/><span/></summary>
           <nav aria-label="Mobile navigation">
-            <Link href="/products">The collection</Link>
+            <Link href="/products">The collection</Link><Link href="/categories">Categories</Link>
             <Link href="/wholesale">For businesses</Link>
             <Link href="/account">My account</Link>
             <Link href="/cart">Shopping cart</Link>
@@ -48,8 +49,8 @@ export function StoreFooter() {
     <div className="store-footer-inner">
       <div className="store-footer-top"><span className="store-footer-brand">Good things, <em>every day.</em></span><Link href="/products" className="store-footer-cta">Explore the collection <Arrow diagonal/></Link></div>
       <div className="store-footer-bottom">
-        <p>yourstore<span aria-hidden="true">.</span> <span className="store-footer-divider">/</span> An evolving collection of daily essentials.</p>
-        <nav aria-label="Footer navigation"><Link href="/products">Products</Link><Link href="/wholesale">Wholesale</Link><Link href="/account">Account</Link><Link href="/admin">Admin</Link></nav>
+        <p>{brand}<span aria-hidden="true">.</span> <span className="store-footer-divider">/</span> An evolving collection of daily essentials.</p>
+        <nav aria-label="Footer navigation"><Link href="/products">Products</Link><Link href="/categories">Categories</Link><Link href="/wholesale">Wholesale</Link><Link href="/account">Account</Link><Link href="/admin">Admin</Link></nav>
         <span>Preview store · Checkout not yet live</span>
       </div>
     </div>
